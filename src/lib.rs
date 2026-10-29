@@ -6,6 +6,7 @@
 //! This library crate exposes the public API that powers the
 //! system_design_quiz
 
+pub mod app_state;
 pub mod models;
 pub mod quiz;
 pub mod terminal;

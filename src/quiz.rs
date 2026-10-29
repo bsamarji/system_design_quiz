@@ -19,7 +19,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn load_questions_success() {
+    fn question_bank_not_empty() {
+        let questions = match load_questions() {
+            Err(e) => panic!("Failed to load questions: {}", e),
+            Ok(q) => q,
+        };
+
+        assert!(!questions.is_empty())
+    }
+
+    #[test]
+    fn verify_question_schema() {
         let questions = match load_questions() {
             Err(e) => panic!("Failed to load questions: {}", e),
             Ok(q) => q,
