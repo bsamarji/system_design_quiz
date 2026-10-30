@@ -3,7 +3,7 @@
 //! The responsibility of the `terminal` crate is to display questions/results
 //! and to capture user input.
 
-use std::io::{self, Write, stdout};
+use std::io::{self, Write};
 
 use crate::models;
 use crossterm::{
@@ -21,10 +21,21 @@ use crossterm::{
     },
 };
 
-pub fn run(question: models::Question) -> io::Result<()> {
+/// Renders a question in the terminal's alternate screen.
+/// The question is auto-formatted using the `display_question` function
+pub fn render(question: &models::Question) -> io::Result<()> {
+    let mut stdout = io::stdout();
+
+    queue!(
+        stdout,
+        EnterAlternateScreen,
+        Clear(ClearType::All),
+        MoveTo(0, 0),
+    )?;
+    stdout.flush()?;
     enable_raw_mode()?;
 
-    display_question(question)?;
+    display_question(question, &stdout)?;
 
     loop {
         if let Event::Key(key_event) = event::read()?
@@ -43,23 +54,14 @@ pub fn run(question: models::Question) -> io::Result<()> {
     }
 
     disable_raw_mode()?;
-    execute!(stdout(), LeaveAlternateScreen)?;
+    execute!(stdout, LeaveAlternateScreen)?;
 
     Ok(())
 }
 
 /// Prints a question to stdout
 /// The question is formatted into a user-friendly quiz style.
-pub fn display_question(question: models::Question) -> io::Result<()> {
-    let mut stdout = io::stdout().lock();
-
-    queue!(
-        stdout,
-        EnterAlternateScreen,
-        Clear(ClearType::All),
-        MoveTo(0, 0),
-    )?;
-
+pub fn display_question(question: &models::Question, mut stdout: &io::Stdout) -> io::Result<()> {
     queue!(
         stdout,
         SetAttribute(Attribute::Bold),

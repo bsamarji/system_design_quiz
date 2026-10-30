@@ -22,9 +22,10 @@ pub struct App {
 }
 
 impl App {
-    pub fn new() -> App {
+    /// Constructs the app state for a new user
+    pub fn build(questions: Vec<Question>) -> App {
         App {
-            questions: vec![],
+            questions: questions,
             current_question_index: 0,
             selected_answer: None,
             screen: Screen::Question,

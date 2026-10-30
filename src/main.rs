@@ -1,21 +1,21 @@
 use std::process;
 use system_design_quiz::app_state::App;
 use system_design_quiz::quiz::load_questions;
-use system_design_quiz::terminal::run;
+use system_design_quiz::terminal::render;
 
 fn main() {
-    let mut app = App::new();
-    let mut questions = load_questions().unwrap_or_else(|err| {
+    // Load question bank
+    let questions = load_questions().unwrap_or_else(|err| {
         eprintln!("Error loading questions: {err}");
         process::exit(1);
     });
 
-    app.questions.append(&mut questions);
+    // Initialize app state
+    let mut app = App::build(questions);
 
-    for question in app.questions {
-        run(question).unwrap_or_else(|err| {
-            eprintln!("Error rendering app: {err}");
-            process::exit(1);
-        })
-    }
+    // Render current question
+    render(&app.questions[app.current_question_index]).unwrap_or_else(|err| {
+        eprintln!("Error rendering app: {err}");
+        process::exit(1);
+    })
 }
