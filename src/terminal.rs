@@ -21,19 +21,47 @@ use crossterm::{
     },
 };
 
+/// This struct can be used to enter and leave the alternate screen.
+///
+/// The struct only has a constructor and destructor. The destructor
+/// implements the `Drop` trait and is automatically called when the
+/// struct goes out of scope.
+pub struct TerminalGuard;
+
+impl TerminalGuard {
+    /// Constructor for the `TerminalGuard`.
+    ///
+    /// Enables raw mode and switches to the alternate screen.
+    pub fn enter() -> io::Result<Self> {
+        enable_raw_mode()?;
+
+        if let Err(err) = execute!(io::stdout(), EnterAlternateScreen) {
+            let _ = disable_raw_mode()?;
+            return Err(err);
+        }
+
+        Ok(Self)
+    }
+}
+
+impl Drop for TerminalGuard {
+    /// Destructor for the `TerminalGuard`.
+    ///
+    /// Implements the drop trait and disables raw mode and leaves the alternate
+    /// screen.
+    fn drop(&mut self) {
+        let _ = execute!(io::stdout(), LeaveAlternateScreen);
+        let _ = disable_raw_mode();
+    }
+}
+
 /// Renders a question in the terminal's alternate screen.
 /// The question is auto-formatted using the `display_question` function
 pub fn render(question: &models::Question) -> io::Result<()> {
     let mut stdout = io::stdout();
 
-    queue!(
-        stdout,
-        EnterAlternateScreen,
-        Clear(ClearType::All),
-        MoveTo(0, 0),
-    )?;
+    queue!(stdout, Clear(ClearType::All), MoveTo(0, 0),)?;
     stdout.flush()?;
-    enable_raw_mode()?;
 
     display_question(question, &stdout)?;
 
@@ -53,9 +81,6 @@ pub fn render(question: &models::Question) -> io::Result<()> {
         }
     }
 
-    disable_raw_mode()?;
-    execute!(stdout, LeaveAlternateScreen)?;
-
     Ok(())
 }
 
@@ -65,8 +90,15 @@ pub fn display_question(question: &models::Question, mut stdout: &io::Stdout) ->
     queue!(
         stdout,
         SetAttribute(Attribute::Bold),
-        Print(format!("Question id: {}", question.id)),
+        SetAttribute(Attribute::Underlined),
+        Print(format!("Question ID: {}", question.id)),
+        SetAttribute(Attribute::Reset),
         Print("\r\n\r\n"),
+    )?;
+
+    queue!(
+        stdout,
+        SetAttribute(Attribute::Bold),
         Print(&question.prompt),
         SetAttribute(Attribute::Reset),
         Print("\r\n\r\n"),
@@ -83,7 +115,7 @@ pub fn display_question(question: &models::Question, mut stdout: &io::Stdout) ->
         )?;
     }
 
-    queue!(stdout, Print("Press a-d to answer | q to quit\r\n"))?;
+    queue!(stdout, Print("Press a-d to answer / q to quit\r\n"))?;
 
     stdout.flush()
 }

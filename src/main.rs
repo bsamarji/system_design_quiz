@@ -1,6 +1,7 @@
 use std::process;
 use system_design_quiz::app_state::App;
 use system_design_quiz::quiz::load_questions;
+use system_design_quiz::terminal::TerminalGuard;
 use system_design_quiz::terminal::render;
 
 fn main() {
@@ -12,6 +13,9 @@ fn main() {
 
     // Initialize app state
     let mut app = App::build(questions);
+
+    // Enter app screen
+    let _terminal = TerminalGuard::enter();
 
     // Render current question
     render(&app.questions[app.current_question_index]).unwrap_or_else(|err| {
