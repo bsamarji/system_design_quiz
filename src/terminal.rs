@@ -32,10 +32,10 @@ impl TerminalGuard {
     /// Constructor for the `TerminalGuard`.
     ///
     /// Enables raw mode and switches to the alternate screen.
-    pub fn enter() -> io::Result<Self> {
+    pub fn enter<W: Write>(mut out: W) -> io::Result<Self> {
         enable_raw_mode()?;
 
-        if let Err(err) = execute!(io::stdout(), EnterAlternateScreen) {
+        if let Err(err) = execute!(out, EnterAlternateScreen) {
             let _ = disable_raw_mode()?;
             return Err(err);
         }
@@ -57,13 +57,11 @@ impl Drop for TerminalGuard {
 
 /// Renders a question in the terminal's alternate screen.
 /// The question is auto-formatted using the `display_question` function
-pub fn render(question: &models::Question) -> io::Result<()> {
-    let mut stdout = io::stdout();
-
+pub fn render<W: Write>(question: &models::Question, mut stdout: W) -> io::Result<()> {
     queue!(stdout, Clear(ClearType::All), MoveTo(0, 0),)?;
     stdout.flush()?;
 
-    display_question(question, &stdout)?;
+    display_question(question, &mut stdout)?;
 
     loop {
         if let Event::Key(key_event) = event::read()?
@@ -86,7 +84,7 @@ pub fn render(question: &models::Question) -> io::Result<()> {
 
 /// Prints a question to stdout
 /// The question is formatted into a user-friendly quiz style.
-pub fn display_question(question: &models::Question, mut stdout: &io::Stdout) -> io::Result<()> {
+pub fn display_question<W: Write>(question: &models::Question, mut stdout: W) -> io::Result<()> {
     queue!(
         stdout,
         SetAttribute(Attribute::Bold),
@@ -118,4 +116,37 @@ pub fn display_question(question: &models::Question, mut stdout: &io::Stdout) ->
     queue!(stdout, Print("Press a-d to answer / q to quit\r\n"))?;
 
     stdout.flush()
+}
+
+#[cfg(test)]
+mod tests {
+    use crossterm::terminal::is_raw_mode_enabled;
+
+    use super::*;
+
+    #[test]
+    fn terminal_guard_entry() {
+        let mut buffer = Vec::new();
+        let terminal = TerminalGuard::enter(&mut buffer);
+        assert!(terminal.is_ok());
+
+        let is_enabled = is_raw_mode_enabled().expect("Error retrieving raw mode status");
+        assert!(is_enabled);
+
+        let mut expected = Vec::new();
+        execute!(expected, EnterAlternateScreen).unwrap();
+
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn terminal_guard_drop() {
+        {
+            let mut buffer = Vec::new();
+            let _terminal = TerminalGuard::enter(&mut buffer);
+        }
+
+        let is_enabled = is_raw_mode_enabled().expect("Error retrieving raw mode status");
+        assert!(!is_enabled);
+    }
 }
