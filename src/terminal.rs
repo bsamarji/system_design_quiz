@@ -47,8 +47,9 @@ impl TerminalGuard {
 impl Drop for TerminalGuard {
     /// Destructor for the `TerminalGuard`.
     ///
-    /// Implements the drop trait and disables raw mode and leaves the alternate
-    /// screen.
+    /// Implements the drop trait for `TerminalGuard`.
+    ///
+    /// This destructor disables raw mode and leaves the alternate screen.
     fn drop(&mut self) {
         let _ = execute!(io::stdout(), LeaveAlternateScreen);
         let _ = disable_raw_mode();
@@ -125,28 +126,26 @@ mod tests {
     use super::*;
 
     #[test]
-    fn terminal_guard_entry() {
-        let mut buffer = Vec::new();
-        let terminal = TerminalGuard::enter(&mut buffer);
-        assert!(terminal.is_ok());
-
-        let is_enabled = is_raw_mode_enabled().expect("Error retrieving raw mode status");
-        assert!(is_enabled);
-
-        let mut expected = Vec::new();
-        execute!(expected, EnterAlternateScreen).unwrap();
-
-        assert_eq!(buffer, expected);
-    }
-
-    #[test]
-    fn terminal_guard_drop() {
+    fn terminal_guard_drops_raw_mode() {
         {
             let mut buffer = Vec::new();
-            let _terminal = TerminalGuard::enter(&mut buffer);
-        }
+            let terminal = TerminalGuard::enter(&mut buffer);
+            assert!(terminal.is_ok());
 
+            let is_enabled = is_raw_mode_enabled().expect("Error retrieving raw mode status");
+            assert!(is_enabled, "Terminal guard entry should enable raw mode");
+
+            let mut expected = Vec::new();
+            execute!(expected, EnterAlternateScreen).unwrap();
+
+            assert_eq!(
+                buffer, expected,
+                "Terminal guard entry should enter alternate screen"
+            );
+        }
+        // Drop currently writes to real stdout, so testing for LeaveAlternateScreen
+        // is not viable until TerminalGuard is refactored
         let is_enabled = is_raw_mode_enabled().expect("Error retrieving raw mode status");
-        assert!(!is_enabled);
+        assert!(!is_enabled, "Terminal guard drop should disable raw mode");
     }
 }

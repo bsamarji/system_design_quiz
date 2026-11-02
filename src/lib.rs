@@ -10,3 +10,6 @@ pub mod app_state;
 pub mod models;
 pub mod quiz;
 pub mod terminal;
+
+#[cfg(test)]
+pub mod test_helpers;

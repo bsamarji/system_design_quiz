@@ -6,6 +6,7 @@
 use crate::models::{Choice, Question};
 
 /// Determines what to display and what actions are available
+#[derive(Debug, PartialEq, Eq)]
 pub enum Screen {
     Question,
     Feedback,
@@ -36,4 +37,21 @@ impl App {
 
 pub fn run() {
     todo!()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_helpers::scalability_question;
+
+    #[test]
+    fn build_app_state() {
+        let test_app = App::build(vec![scalability_question()]);
+
+        assert_eq!(test_app.questions[0], scalability_question());
+        assert_eq!(test_app.screen, Screen::Question);
+        assert_eq!(test_app.selected_answer, None);
+        assert_eq!(test_app.should_quit, false);
+        assert_eq!(test_app.current_question_index, 0);
+    }
 }
