@@ -5,7 +5,10 @@
 
 use std::io::{self, Write};
 
-use crate::{app_state, models};
+use crate::{
+    app_state,
+    models::{self, Choice},
+};
 use crossterm::{
     cursor::MoveTo,
     event::{
@@ -57,8 +60,9 @@ impl Drop for TerminalGuard {
 }
 
 /// Renders a question in the terminal's alternate screen.
+///
 /// The question is auto-formatted using the `display_question` function
-pub fn render<W: Write>(app: &mut app_state::App, mut stdout: W) -> io::Result<()> {
+pub fn render_question<W: Write>(app: &mut app_state::App, mut stdout: W) -> io::Result<()> {
     queue!(stdout, Clear(ClearType::All), MoveTo(0, 0),)?;
     stdout.flush()?;
 
@@ -99,7 +103,8 @@ pub fn render<W: Write>(app: &mut app_state::App, mut stdout: W) -> io::Result<(
     Ok(())
 }
 
-/// Prints a question to stdout
+/// Prints a question to stdout.
+///
 /// The question is formatted into a user-friendly quiz style.
 pub fn display_question<W: Write>(question: &models::Question, mut stdout: W) -> io::Result<()> {
     queue!(
@@ -130,7 +135,61 @@ pub fn display_question<W: Write>(question: &models::Question, mut stdout: W) ->
         )?;
     }
 
-    queue!(stdout, Print("Press a-d to answer / q to quit\r\n"))?;
+    queue!(
+        stdout,
+        Print("Press a - d to answer / q to quit\r\n"),
+        Print("\r\n\r\n"),
+    )?;
+
+    stdout.flush()
+}
+
+pub fn display_feedback<W: Write>(
+    is_correct: bool,
+    app: &mut app_state::App,
+    mut stdout: W,
+) -> io::Result<()> {
+    let current_question = &app.questions[app.current_question_index];
+    let correct_choice = match current_question.correct_answer {
+        Choice::A => 'A',
+        Choice::B => 'B',
+        Choice::C => 'C',
+        Choice::D => 'D',
+    };
+
+    if is_correct {
+        queue!(
+            stdout,
+            SetAttribute(Attribute::Bold),
+            SetForegroundColor(Color::Green),
+            Print(format!(
+                "The correct answer is {correct_choice}. Well done!"
+            )),
+            SetAttribute(Attribute::Reset),
+            Print("\r\n\r\n"),
+        )?;
+    } else {
+        queue!(
+            stdout,
+            SetAttribute(Attribute::Bold),
+            SetForegroundColor(Color::Red),
+            Print(format!(
+                "The correct answer is {correct_choice}. Read the explanation to learn more..."
+            )),
+            SetAttribute(Attribute::Reset),
+            Print("\r\n\r\n"),
+        )?;
+    }
+
+    queue!(
+        stdout,
+        SetAttribute(Attribute::Bold),
+        Print("Explanation:"),
+        Print("\r\n\r\n"),
+        SetAttribute(Attribute::Reset),
+        Print(&current_question.explanation),
+        Print("\r\n\r\n"),
+    )?;
 
     stdout.flush()
 }

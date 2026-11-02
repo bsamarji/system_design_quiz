@@ -20,6 +20,6 @@ pub fn scalability_question() -> models::Question {
             "It automatically restarts after a software crash".to_string(),
         ],
         correct_answer: models::Choice::A,
-        explanation: "Scalability is a service's ability to handle growing workload by adding resources, such as CPU, memory, or additional servers, while maintaining acceptable performance. For example, adding servers might allow it to support more concurrent users without unacceptable increases in response time. The improvement does not have to be exactly proportional to the resources added; that stronger property is called linear scalability. B describes low latency under light load, C describes fault tolerance, and D describes recovery.".to_string(),
+        explanation: "Scalability is a service's ability to handle growing workload by adding resources, such as CPU, memory, or additional servers, while maintaining acceptable performance. For example, adding servers might allow it to support more concurrent users without unacceptable increases in response time. The improvement does not have to be exactly proportional to the resources added; that stronger property is called linear scalability.".to_string(),
     }
 }
