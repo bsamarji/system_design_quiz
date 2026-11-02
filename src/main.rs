@@ -1,5 +1,7 @@
-use std::{io, process};
+use std::thread::sleep;
+use std::{io, process, time};
 use system_design_quiz::app_state::App;
+use system_design_quiz::quiz::evaluate_answer;
 use system_design_quiz::quiz::load_questions;
 use system_design_quiz::terminal::TerminalGuard;
 use system_design_quiz::terminal::render;
@@ -19,8 +21,16 @@ fn main() {
     let _terminal = TerminalGuard::enter(&mut stdout);
 
     // Render current question
-    render(&app.questions[app.current_question_index], &mut stdout).unwrap_or_else(|err| {
+    render(&mut app, &mut stdout).unwrap_or_else(|err| {
         eprintln!("Error rendering app: {err}");
         process::exit(1);
-    })
+    });
+
+    if evaluate_answer(&mut app) {
+        println!("Correct")
+    } else {
+        println!("False")
+    }
+
+    sleep(time::Duration::from_secs(2));
 }

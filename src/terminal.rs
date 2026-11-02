@@ -5,7 +5,7 @@
 
 use std::io::{self, Write};
 
-use crate::models;
+use crate::{app_state, models};
 use crossterm::{
     cursor::MoveTo,
     event::{
@@ -58,11 +58,11 @@ impl Drop for TerminalGuard {
 
 /// Renders a question in the terminal's alternate screen.
 /// The question is auto-formatted using the `display_question` function
-pub fn render<W: Write>(question: &models::Question, mut stdout: W) -> io::Result<()> {
+pub fn render<W: Write>(app: &mut app_state::App, mut stdout: W) -> io::Result<()> {
     queue!(stdout, Clear(ClearType::All), MoveTo(0, 0),)?;
     stdout.flush()?;
 
-    display_question(question, &mut stdout)?;
+    display_question(&app.questions[app.current_question_index], &mut stdout)?;
 
     loop {
         if let Event::Key(key_event) = event::read()?
@@ -73,6 +73,22 @@ pub fn render<W: Write>(question: &models::Question, mut stdout: W) -> io::Resul
                     break;
                 }
                 KeyCode::Char('c') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
+                    break;
+                }
+                KeyCode::Char('a') => {
+                    app.selected_answer = Some(models::Choice::A);
+                    break;
+                }
+                KeyCode::Char('b') => {
+                    app.selected_answer = Some(models::Choice::B);
+                    break;
+                }
+                KeyCode::Char('c') => {
+                    app.selected_answer = Some(models::Choice::C);
+                    break;
+                }
+                KeyCode::Char('d') => {
+                    app.selected_answer = Some(models::Choice::D);
                     break;
                 }
                 _ => {}
