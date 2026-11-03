@@ -81,7 +81,7 @@ pub fn render<W: Write>(app: &mut app_state::App, mut stdout: W) -> io::Result<(
 /// Prints a question to stdout.
 ///
 /// The question is formatted into a user-friendly quiz style.
-pub fn display_question<W: Write>(question: &models::Question, mut stdout: W) -> io::Result<()> {
+fn display_question<W: Write>(question: &models::Question, mut stdout: W) -> io::Result<()> {
     queue!(stdout, Clear(ClearType::All), MoveTo(0, 0),)?;
 
     queue!(
@@ -126,7 +126,7 @@ pub fn display_question<W: Write>(question: &models::Question, mut stdout: W) ->
 /// Prints feedback to stdout
 ///
 /// A little message is displayed along with the correct answer and explanation
-pub fn display_feedback<W: Write>(
+fn display_feedback<W: Write>(
     is_correct: bool,
     app: &mut app_state::App,
     mut stdout: W,
