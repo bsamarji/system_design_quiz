@@ -14,6 +14,7 @@ pub fn load_questions() -> Result<Vec<models::Question>, serde_json::Error> {
     serde_json::from_str(QUESTION_BANK)
 }
 
+/// Evaluates the selected answer against the current question's correct answer
 pub fn evaluate_answer(app: &mut app_state::App) -> bool {
     let correct_answer = &app.questions[app.current_question_index].correct_answer;
     match &app.selected_answer {

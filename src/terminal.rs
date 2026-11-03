@@ -6,16 +6,12 @@
 use std::io::{self, Write};
 
 use crate::{
-    app_state,
+    app_state::{self, Screen},
     models::{self, Choice},
+    quiz::evaluate_answer,
 };
 use crossterm::{
     cursor::MoveTo,
-    event::{
-        self,
-        Event::{self},
-        KeyCode, KeyEventKind, KeyModifiers,
-    },
     execute, queue,
     style::{Attribute, Color, Print, SetAttribute, SetForegroundColor},
     terminal::{
@@ -59,44 +55,23 @@ impl Drop for TerminalGuard {
     }
 }
 
-/// Renders a question in the terminal's alternate screen.
+/// Renders a `Screen` in the terminal's alternate screen.
 ///
-/// The question is auto-formatted using the `display_question` function
-pub fn render_question<W: Write>(app: &mut app_state::App, mut stdout: W) -> io::Result<()> {
-    queue!(stdout, Clear(ClearType::All), MoveTo(0, 0),)?;
-    stdout.flush()?;
-
-    display_question(&app.questions[app.current_question_index], &mut stdout)?;
-
-    loop {
-        if let Event::Key(key_event) = event::read()?
-            && key_event.kind == KeyEventKind::Press
-        {
-            match key_event.code {
-                KeyCode::Char('q') => {
-                    break;
-                }
-                KeyCode::Char('c') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
-                    break;
-                }
-                KeyCode::Char('a') => {
-                    app.selected_answer = Some(models::Choice::A);
-                    break;
-                }
-                KeyCode::Char('b') => {
-                    app.selected_answer = Some(models::Choice::B);
-                    break;
-                }
-                KeyCode::Char('c') => {
-                    app.selected_answer = Some(models::Choice::C);
-                    break;
-                }
-                KeyCode::Char('d') => {
-                    app.selected_answer = Some(models::Choice::D);
-                    break;
-                }
-                _ => {}
-            }
+/// The `Screen` is auto-formatted using the display functions.
+///
+/// The `Screen` can be of Question, Feedback or Summary, depending on the app
+/// state.
+pub fn render<W: Write>(app: &mut app_state::App, mut stdout: W) -> io::Result<()> {
+    match app.screen {
+        Screen::Question => {
+            display_question(&app.questions[app.current_question_index], &mut stdout)?;
+        }
+        Screen::Feedback => {
+            let is_correct = evaluate_answer(app);
+            display_feedback(is_correct, app, stdout)?;
+        }
+        Screen::Summary => {
+            todo!()
         }
     }
 
@@ -107,6 +82,8 @@ pub fn render_question<W: Write>(app: &mut app_state::App, mut stdout: W) -> io:
 ///
 /// The question is formatted into a user-friendly quiz style.
 pub fn display_question<W: Write>(question: &models::Question, mut stdout: W) -> io::Result<()> {
+    queue!(stdout, Clear(ClearType::All), MoveTo(0, 0),)?;
+
     queue!(
         stdout,
         SetAttribute(Attribute::Bold),
@@ -137,13 +114,18 @@ pub fn display_question<W: Write>(question: &models::Question, mut stdout: W) ->
 
     queue!(
         stdout,
-        Print("Press a - d to answer / q to quit\r\n"),
+        Print(
+            "Press a - d to answer / n to move to next question / p to move to previous question / q to quit\r\n"
+        ),
         Print("\r\n\r\n"),
     )?;
 
     stdout.flush()
 }
 
+/// Prints feedback to stdout
+///
+/// A little message is displayed along with the correct answer and explanation
 pub fn display_feedback<W: Write>(
     is_correct: bool,
     app: &mut app_state::App,
