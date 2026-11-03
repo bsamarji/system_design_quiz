@@ -10,5 +10,17 @@
     ],
     "correct_answer": "A",
     "explanation": "Scalability is a service's ability to handle growing workload by adding resources, such as CPU, memory, or additional servers, while maintaining acceptable performance. For example, adding servers might allow it to support more concurrent users without unacceptable increases in response time. The improvement does not have to be exactly proportional to the resources added; that stronger property is called linear scalability."
+  },
+  {
+    "id": "cap_theorem_001",
+    "prompt": "If your business requirements demand atomic reads and writes, which CAP properties should your system prioritize during a network partition?",
+    "options": [
+      "Your system should be consistent, available and partition tolerant",
+      "Your system should be available and consistent",
+      "Your system should be consistent and partition tolerant",
+      "Your system should be available and partition tolerant"
+    ],
+    "correct_answer": "C",
+    "explanation": "Atomic reads and writes require strong consistency: a read must return the most recently committed value rather than stale data. Because network partitions are unavoidable in distributed systems, the system must also tolerate partitions. During a partition, CAP requires choosing between consistency and availability; a CP system preserves consistency by allowing some requests to fail or wait rather than returning potentially stale data."
   }
 ]
