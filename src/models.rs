@@ -28,10 +28,3 @@ pub struct Question {
     /// Explanation for the correct answer
     pub explanation: String,
 }
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Attempt {
-    pub question_id: String,
-    pub selected_answer: Choice,
-    pub was_correct: bool,
-}
