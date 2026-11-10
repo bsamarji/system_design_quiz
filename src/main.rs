@@ -11,6 +11,10 @@ fn main() {
         eprintln!("Error loading questions: {err}");
         process::exit(1);
     });
+    if questions.len() == 0 {
+        eprintln!("Expected the number of questions in the question bank to be greater than 0");
+        process::exit(1);
+    }
 
     // Get the progress.json file path based on the user's OS
     let progress_file_path = get_progress_file_path().unwrap_or_else(|| {
