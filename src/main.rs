@@ -45,7 +45,7 @@ fn main() {
         None => App::build(questions),
     };
 
-    // Initialize app state
+    // Initialize stdout handle
     let mut stdout = io::stdout();
 
     // Enter app screen and activate terminal guard
