@@ -65,10 +65,13 @@ pub fn render<W: Write>(app: &mut app_state::App, mut stdout: W) -> io::Result<(
     match app.screen {
         Screen::Question => {
             display_question(&app.questions[app.current_question_index], &mut stdout)?;
+            display_question_navigation(&mut stdout)?;
         }
         Screen::Feedback => {
+            display_question(&app.questions[app.current_question_index], &mut stdout)?;
             let is_correct = evaluate_answer(app);
-            display_feedback(is_correct, app, stdout)?;
+            display_feedback(is_correct, app, &mut stdout)?;
+            display_feedback_navigation(&mut stdout)?;
         }
         Screen::Summary => {
             todo!()
@@ -111,14 +114,6 @@ fn display_question<W: Write>(question: &models::Question, mut stdout: W) -> io:
             Print("\r\n\r\n"),
         )?;
     }
-
-    queue!(
-        stdout,
-        Print(
-            "Press a - d to answer / n to move to next question / p to move to previous question / q to quit\r\n"
-        ),
-        Print("\r\n\r\n"),
-    )?;
 
     stdout.flush()
 }
@@ -170,6 +165,30 @@ fn display_feedback<W: Write>(
         Print("\r\n\r\n"),
         SetAttribute(Attribute::Reset),
         Print(&current_question.explanation),
+        Print("\r\n\r\n"),
+    )?;
+
+    stdout.flush()
+}
+
+/// Prints the actionable keys available to the user on the `Question` screen
+fn display_question_navigation<W: Write>(mut stdout: W) -> io::Result<()> {
+    queue!(
+        stdout,
+        SetAttribute(Attribute::Bold),
+        Print("Press <a> - <d> to answer / <n>ext question / <p>revious question / <q>uit\r\n"),
+        Print("\r\n\r\n"),
+    )?;
+
+    stdout.flush()
+}
+
+/// Prints the actionable keys available to the user on the `Feedback` screen
+fn display_feedback_navigation<W: Write>(mut stdout: W) -> io::Result<()> {
+    queue!(
+        stdout,
+        SetAttribute(Attribute::Bold),
+        Print("Press <n>ext question / <p>revious question / <q>uit\r\n"),
         Print("\r\n\r\n"),
     )?;
 

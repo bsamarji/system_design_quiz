@@ -17,8 +17,8 @@ pub fn load_questions() -> Result<Vec<models::Question>, serde_json::Error> {
 /// Evaluates the selected answer against the current question's correct answer
 pub fn evaluate_answer(app: &mut app_state::App) -> bool {
     let correct_answer = &app.questions[app.current_question_index].correct_answer;
-    match &app.selected_answer {
-        Some(s) => s == correct_answer,
+    match &app.current_answer() {
+        Some(a) => a == correct_answer,
         None => false,
     }
 }
@@ -48,14 +48,14 @@ mod tests {
     #[test]
     fn evaluate_correct_scalability_answer() {
         let mut app = App::build(vec![scalability_question()]);
-        app.selected_answer = Some(Choice::A);
+        app.answers.insert("scalability_001".to_string(), Choice::A);
         assert!(evaluate_answer(&mut app))
     }
 
     #[test]
     fn evaluate_incorrect_scalability_answer() {
         let mut app = App::build(vec![scalability_question()]);
-        app.selected_answer = Some(Choice::B);
+        app.answers.insert("scalability_001".to_string(), Choice::B);
         assert!(!evaluate_answer(&mut app))
     }
 }
