@@ -1,6 +1,6 @@
 //! System Design Quiz
 //!
-//! System design quiz is a cli application that tests a users system design
+//! System design quiz is a CLI application that tests a user's system design
 //! knowledge by providing an interactive MCQ style quiz.
 //!
 //! This library crate exposes the public API that powers the
@@ -9,6 +9,7 @@
 pub mod app_state;
 pub mod models;
 pub mod quiz;
+pub mod storage;
 pub mod terminal;
 
 #[cfg(test)]

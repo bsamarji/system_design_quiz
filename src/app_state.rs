@@ -3,9 +3,11 @@
 //! The responsibility of the `app_state` crate is to manage the loading,
 //! rendering and progress of the application.
 
+use std::collections::HashMap;
+
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::models::{Choice, Question};
+use crate::models::{Choice, Question, QuizProgress};
 
 /// Determines what to display and what actions are available
 #[derive(Debug, PartialEq, Eq)]
@@ -27,23 +29,87 @@ pub struct App {
     pub screen: Screen,
     /// Determines if the app should quit
     pub should_quit: bool,
+    /// Key is the question id, value is the selected answer by the user
+    pub answers: HashMap<String, Choice>,
+}
+
+/// Retrieve the current question index from the current quiz progress
+///
+/// If the question id can no longer be found in the question bank then
+/// index position zero is returned by default
+fn get_current_question_index(questions: &Vec<Question>, progress: &QuizProgress) -> usize {
+    questions
+        .iter()
+        .position(|question| question.id == progress.current_question_id)
+        .unwrap_or(0)
 }
 
 impl App {
     /// Constructs the app state for a new user
-    pub fn build(questions: Vec<Question>) -> App {
-        App {
+    pub fn build(questions: Vec<Question>) -> Self {
+        Self {
             questions: questions,
             current_question_index: 0,
             selected_answer: None,
             screen: Screen::Question,
             should_quit: false,
+            answers: HashMap::new(),
+        }
+    }
+
+    /// Constructs the app state from loaded quiz progress
+    pub fn build_from_progress(questions: Vec<Question>, progress: QuizProgress) -> Self {
+        let current_question_index = get_current_question_index(&questions, &progress);
+
+        Self {
+            questions: questions,
+            current_question_index: current_question_index,
+            selected_answer: None,
+            screen: Screen::Question,
+            should_quit: false,
+            answers: progress.answers,
+        }
+    }
+
+    /// Construct the current `QuizProgress` from the app state
+    pub fn progress(&self) -> QuizProgress {
+        QuizProgress {
+            current_question_id: self.get_current_question_id(),
+            answers: self.answers.clone(),
         }
     }
 
     /// Sets the `should_quit` value of the `App` to true
     pub fn quit(&mut self) {
         self.should_quit = true
+    }
+
+    /// Retrieve the current questions unique `String` id
+    fn get_current_question_id(&self) -> String {
+        let id = &self.questions[self.current_question_index].id;
+        id.to_string()
+    }
+
+    /// Increments the `current_question_index` by 1
+    ///
+    /// If the `current_question_index` reaches the length of the question
+    /// bank then it won't increment anymore
+    fn increment_question_index(&mut self) {
+        let total_questions = self.questions.len() - 1;
+
+        if self.current_question_index < total_questions {
+            self.current_question_index += 1
+        }
+    }
+
+    /// Decrements the `current_question_index` by 1
+    ///
+    /// If the `current_question_index` reaches 0 then it won't decrement
+    /// anymore
+    fn decrement_question_index(&mut self) {
+        if self.current_question_index > 0 {
+            self.current_question_index -= 1
+        }
     }
 
     /// Handles key press events to dictate the next action the application
@@ -59,18 +125,26 @@ impl App {
                 }
                 KeyCode::Char('a') => {
                     self.selected_answer = Some(Choice::A);
+                    self.answers
+                        .insert(self.get_current_question_id(), Choice::A);
                     self.screen = Screen::Feedback;
                 }
                 KeyCode::Char('b') => {
                     self.selected_answer = Some(Choice::B);
+                    self.answers
+                        .insert(self.get_current_question_id(), Choice::B);
                     self.screen = Screen::Feedback;
                 }
                 KeyCode::Char('c') => {
                     self.selected_answer = Some(Choice::C);
+                    self.answers
+                        .insert(self.get_current_question_id(), Choice::C);
                     self.screen = Screen::Feedback;
                 }
                 KeyCode::Char('d') => {
                     self.selected_answer = Some(Choice::D);
+                    self.answers
+                        .insert(self.get_current_question_id(), Choice::D);
                     self.screen = Screen::Feedback;
                 }
                 KeyCode::Char('n') => {
@@ -85,28 +159,6 @@ impl App {
             }
         }
     }
-
-    /// Increments the `current_question_index` by 1
-    ///
-    /// If the `current_question_index` reaches the length of the question
-    /// bank then it won't increment anymore
-    pub fn increment_question_index(&mut self) {
-        let total_questions = self.questions.len() - 1;
-
-        if self.current_question_index < total_questions {
-            self.current_question_index += 1
-        }
-    }
-
-    /// Decrements the `current_question_index` by 1
-    ///
-    /// If the `current_question_index` reaches 0 then it won't decrement
-    /// anymore
-    pub fn decrement_question_index(&mut self) {
-        if self.current_question_index > 0 {
-            self.current_question_index -= 1
-        }
-    }
 }
 
 #[cfg(test)]
@@ -115,7 +167,21 @@ mod tests {
     use crate::test_helpers::{cap_theorem_question, scalability_question};
 
     #[test]
-    fn build_app_state() {
+    fn get_current_question_index_from_quiz_progress() {
+        let answers = HashMap::from([("scalability_001".to_string(), Choice::A)]);
+        let progress = QuizProgress {
+            current_question_id: "cap_theorem_001".to_string(),
+            answers: answers,
+        };
+        let questions = vec![scalability_question(), cap_theorem_question()];
+
+        let index = get_current_question_index(&questions, &progress);
+
+        assert_eq!(index, 1);
+    }
+
+    #[test]
+    fn build_app_state_from_new() {
         let test_app = App::build(vec![scalability_question()]);
 
         assert_eq!(test_app.questions[0], scalability_question());
@@ -123,6 +189,47 @@ mod tests {
         assert_eq!(test_app.selected_answer, None);
         assert_eq!(test_app.should_quit, false);
         assert_eq!(test_app.current_question_index, 0);
+        assert!(test_app.answers.is_empty());
+    }
+
+    #[test]
+    fn build_app_state_from_progress() {
+        let answers = HashMap::from([("scalability_001".to_string(), Choice::A)]);
+        let progress = QuizProgress {
+            current_question_id: "cap_theorem_001".to_string(),
+            answers: answers,
+        };
+        let questions = vec![scalability_question(), cap_theorem_question()];
+
+        let test_app = App::build_from_progress(questions, progress);
+
+        assert_eq!(
+            test_app.questions,
+            vec![scalability_question(), cap_theorem_question()]
+        );
+        assert_eq!(test_app.screen, Screen::Question);
+        assert_eq!(test_app.selected_answer, None);
+        assert_eq!(test_app.should_quit, false);
+        assert_eq!(test_app.current_question_index, 1);
+        assert!(!test_app.answers.is_empty());
+        assert_eq!(test_app.answers["scalability_001"], Choice::A);
+    }
+
+    #[test]
+    fn get_progress_from_app_state() {
+        let answers = HashMap::from([("scalability_001".to_string(), Choice::A)]);
+        let progress = QuizProgress {
+            current_question_id: "cap_theorem_001".to_string(),
+            answers: answers,
+        };
+        let questions = vec![scalability_question(), cap_theorem_question()];
+
+        let test_app = App::build_from_progress(questions, progress);
+
+        let progress = test_app.progress();
+
+        assert_eq!(progress.current_question_id, "cap_theorem_001".to_string());
+        assert_eq!(progress.answers["scalability_001"], Choice::A);
     }
 
     #[test]
@@ -131,6 +238,16 @@ mod tests {
         test_app.quit();
 
         assert_eq!(test_app.should_quit, true);
+    }
+
+    #[test]
+    fn get_current_question_id_from_app_state() {
+        let test_app = App::build(vec![scalability_question()]);
+
+        assert_eq!(
+            test_app.get_current_question_id(),
+            "scalability_001".to_string()
+        );
     }
 
     #[test]
@@ -183,6 +300,7 @@ mod tests {
 
             assert_eq!(test_app.selected_answer, Some(expected_choice));
             assert_eq!(test_app.screen, Screen::Feedback);
+            assert_eq!(test_app.answers["scalability_001"], expected_choice);
         }
     }
 
@@ -235,5 +353,6 @@ mod tests {
         assert_eq!(test_app.selected_answer, None);
         assert_eq!(test_app.should_quit, false);
         assert_eq!(test_app.screen, Screen::Question);
+        assert!(test_app.answers.is_empty());
     }
 }
