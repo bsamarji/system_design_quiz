@@ -47,7 +47,7 @@ pub struct QuizScore {
     /// The total number of questions
     pub total: usize,
     /// The score as a percentage
-    pub percentage: usize,
+    pub percentage: f64,
     /// The score turned into a grade based on the US grading system
     pub grade: char,
 }
@@ -56,16 +56,16 @@ pub struct QuizScore {
 pub fn calculate_score(questions: &[Question], answers: &HashMap<String, Choice>) -> QuizScore {
     let correct = correct_answer_count(questions, answers);
     let total = questions.len();
-    let percentage = correct / total * 100;
-    let grade = if percentage >= 90 {
+    let percentage = correct as f64 / total as f64 * 100.0;
+    let grade = if percentage >= 90.0 {
         'A'
-    } else if percentage >= 80 {
+    } else if percentage >= 80.0 {
         'B'
-    } else if percentage >= 70 {
+    } else if percentage >= 70.0 {
         'C'
-    } else if percentage >= 60 {
+    } else if percentage >= 60.0 {
         'D'
-    } else if percentage >= 50 {
+    } else if percentage >= 50.0 {
         'E'
     } else {
         'F'
@@ -134,7 +134,7 @@ mod tests {
 
         assert_eq!(score.correct, 2);
         assert_eq!(score.total, 2);
-        assert_eq!(score.percentage, 100);
+        assert_eq!(score.percentage, 100.0);
         assert_eq!(score.grade, 'A');
     }
 }
