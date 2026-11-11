@@ -197,10 +197,8 @@ impl App {
                         self.update_screen_for_current_question();
                     }
                 }
-                KeyCode::Char('r') => {
-                    if self.screen == Screen::Summary {
-                        self.reset_quiz();
-                    }
+                KeyCode::Char('r') if self.screen == Screen::Summary => {
+                    self.reset_quiz();
                 }
                 _ => {}
             }
