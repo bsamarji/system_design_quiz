@@ -328,6 +328,31 @@ mod tests {
     }
 
     #[test]
+    fn reset_quiz_state() {
+        let answers = HashMap::from([
+            ("scalability_001".to_string(), Choice::A),
+            ("cap_theorem_001".to_string(), Choice::C),
+        ]);
+        let progress = QuizProgress {
+            answers,
+            current_question_id: "cap_theorem_001".to_string(),
+        };
+        let questions = vec![scalability_question(), cap_theorem_question()];
+
+        let mut test_app = App::build_from_progress(questions, progress);
+
+        assert_eq!(test_app.current_question_index, 1);
+        assert_eq!(test_app.screen, Screen::Feedback);
+        assert!(!test_app.answers.is_empty());
+
+        test_app.reset_quiz();
+
+        assert_eq!(test_app.current_question_index, 0);
+        assert_eq!(test_app.screen, Screen::Question);
+        assert!(test_app.answers.is_empty());
+    }
+
+    #[test]
     fn answer_key_select_matching_choice() {
         let cases = [
             ('a', Choice::A),
@@ -449,6 +474,32 @@ mod tests {
         test_app.handle_event(KeyEvent::new(KeyCode::Char('p'), KeyModifiers::NONE));
 
         assert_eq!(test_app.current_question_index, 0);
+    }
+
+    #[test]
+    fn r_resets_quiz_state_on_summary_screen() {
+        let answers = HashMap::from([
+            ("scalability_001".to_string(), Choice::A),
+            ("cap_theorem_001".to_string(), Choice::C),
+        ]);
+        let progress = QuizProgress {
+            answers,
+            current_question_id: "cap_theorem_001".to_string(),
+        };
+        let questions = vec![scalability_question(), cap_theorem_question()];
+
+        let mut test_app = App::build_from_progress(questions, progress);
+        test_app.screen = Screen::Summary;
+
+        assert_eq!(test_app.current_question_index, 1);
+        assert_eq!(test_app.screen, Screen::Summary);
+        assert!(!test_app.answers.is_empty());
+
+        test_app.handle_event(KeyEvent::new(KeyCode::Char('r'), KeyModifiers::NONE));
+
+        assert_eq!(test_app.current_question_index, 0);
+        assert_eq!(test_app.screen, Screen::Question);
+        assert!(test_app.answers.is_empty());
     }
 
     #[test]
