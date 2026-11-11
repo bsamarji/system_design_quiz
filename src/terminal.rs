@@ -198,11 +198,17 @@ fn display_feedback_navigation<W: Write>(mut stdout: W) -> io::Result<()> {
 #[cfg(test)]
 mod tests {
     use crossterm::terminal::is_raw_mode_enabled;
+    use std::io::IsTerminal;
 
     use super::*;
 
     #[test]
-    fn terminal_guard_drops_raw_mode() {
+    fn terminal_guard_manages_raw_mode_when_a_tty_is_available() {
+        if !(io::stdin().is_terminal() && io::stdout().is_terminal()) {
+            eprintln!("Skipping terminal guard test: no interactive terminal available");
+            return;
+        }
+
         {
             let mut buffer = Vec::new();
             let terminal = TerminalGuard::enter(&mut buffer);
