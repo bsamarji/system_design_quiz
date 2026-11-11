@@ -7,7 +7,7 @@ use std::io::{self, Write};
 
 use crate::{
     app_state::{self, Screen},
-    models::{self, Choice},
+    models::Choice,
     quiz::{QuizScore, calculate_score, evaluate_answer},
 };
 use crossterm::{
@@ -64,11 +64,11 @@ impl Drop for TerminalGuard {
 pub fn render<W: Write>(app: &mut app_state::App, mut stdout: W) -> io::Result<()> {
     match app.screen {
         Screen::Question => {
-            display_question(&app.questions[app.current_question_index], &mut stdout)?;
+            display_question(app, &mut stdout)?;
             display_question_navigation(&mut stdout)?;
         }
         Screen::Feedback => {
-            display_question(&app.questions[app.current_question_index], &mut stdout)?;
+            display_question(app, &mut stdout)?;
             let is_correct = evaluate_answer(app);
             display_feedback(is_correct, app, &mut stdout)?;
             display_feedback_navigation(&mut stdout)?;
@@ -86,8 +86,24 @@ pub fn render<W: Write>(app: &mut app_state::App, mut stdout: W) -> io::Result<(
 /// Prints a question to stdout.
 ///
 /// The question is formatted into a user-friendly quiz style.
-fn display_question<W: Write>(question: &models::Question, mut stdout: W) -> io::Result<()> {
+fn display_question<W: Write>(app: &app_state::App, mut stdout: W) -> io::Result<()> {
     queue!(stdout, Clear(ClearType::All), MoveTo(0, 0),)?;
+
+    let current_question_number = app.current_question_index + 1;
+    let total_question_count = app.questions.len();
+
+    queue!(
+        stdout,
+        SetAttribute(Attribute::Bold),
+        Print(format!(
+            "Question {} of {}",
+            current_question_number, total_question_count
+        )),
+        SetAttribute(Attribute::Reset),
+        Print("\r\n\r\n"),
+    )?;
+
+    let question = &app.questions[app.current_question_index];
 
     queue!(
         stdout,
