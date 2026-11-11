@@ -203,7 +203,7 @@ fn display_summary<W: Write>(score: QuizScore, mut stdout: W) -> io::Result<()> 
     queue!(
         stdout,
         SetAttribute(Attribute::Bold),
-        Print(format!("  Questions answered correctly: {}", score.correct)),
+        Print(format!("  Total score: {}/{}", score.correct, score.total)),
         SetAttribute(Attribute::Reset),
         Print("\r\n\r\n"),
     )?;
@@ -211,15 +211,7 @@ fn display_summary<W: Write>(score: QuizScore, mut stdout: W) -> io::Result<()> 
     queue!(
         stdout,
         SetAttribute(Attribute::Bold),
-        Print(format!("  Total number of questions: {}", score.total)),
-        SetAttribute(Attribute::Reset),
-        Print("\r\n\r\n"),
-    )?;
-
-    queue!(
-        stdout,
-        SetAttribute(Attribute::Bold),
-        Print(format!("  Percentage score: {}", score.percentage)),
+        Print(format!("  Percentage: {}%", score.percentage)),
         SetAttribute(Attribute::Reset),
         Print("\r\n\r\n"),
     )?;
