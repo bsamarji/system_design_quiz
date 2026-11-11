@@ -2,6 +2,16 @@
 name = "system_design_quiz"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.98.1"
+authors = ["Ben Samarji <bensamarji5637@gmail.com>"]
+license = "MIT"
+description = "A system design quiz CLI app"
+documentation = "https://docs.rs/system_design_quiz"
+homepage = "https://github.com/bsamarji/system_design_quiz"
+repository = "https://github.com/bsamarji/system_design_quiz"
+readme = "README.md"
+keywords = ["system design", "cli", "quiz", "learning"]
+categories = ["command-line-interface", "command-line-utilities"]
 
 [dependencies]
 crossterm = "0.29.0"
