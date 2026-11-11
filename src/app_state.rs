@@ -131,6 +131,13 @@ impl App {
         }
     }
 
+    /// Check if all questions in the question bank have been answered
+    fn all_questions_answered(&self) -> bool {
+        self.questions
+            .iter()
+            .all(|question| self.answers.contains_key(&question.id))
+    }
+
     /// Determines the current screen based on state of the current answer
     /// to the current question
     fn update_screen_for_current_question(&mut self) {
@@ -165,12 +172,22 @@ impl App {
                     self.answer_current_question(Choice::D);
                 }
                 KeyCode::Char('n') => {
-                    self.increment_question_index();
-                    self.update_screen_for_current_question();
+                    let is_on_last_question =
+                        self.current_question_index + 1 == self.questions.len();
+                    if is_on_last_question && self.all_questions_answered() {
+                        self.screen = Screen::Summary;
+                    } else {
+                        self.increment_question_index();
+                        self.update_screen_for_current_question();
+                    }
                 }
                 KeyCode::Char('p') => {
-                    self.decrement_question_index();
-                    self.update_screen_for_current_question();
+                    if self.screen == Screen::Summary {
+                        self.update_screen_for_current_question();
+                    } else {
+                        self.decrement_question_index();
+                        self.update_screen_for_current_question();
+                    }
                 }
                 _ => {}
             }
@@ -346,6 +363,23 @@ mod tests {
         let test_app = App::build_from_progress(questions, progress);
 
         assert_eq!(test_app.screen, Screen::Feedback);
+    }
+
+    #[test]
+    fn all_questions_answered_in_question_bank() {
+        let mut app = App::build(vec![scalability_question(), cap_theorem_question()]);
+        app.answers.insert("scalability_001".to_string(), Choice::A); // correct answer is A
+        app.answers.insert("cap_theorem_001".to_string(), Choice::C); // correct answer is C
+
+        assert!(app.all_questions_answered());
+    }
+
+    #[test]
+    fn not_all_questions_answered_in_question_bank() {
+        let mut app = App::build(vec![scalability_question(), cap_theorem_question()]);
+        app.answers.insert("scalability_001".to_string(), Choice::A); // correct answer is A
+
+        assert!(!app.all_questions_answered());
     }
 
     #[test]
