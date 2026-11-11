@@ -11,8 +11,8 @@ fn main() {
         eprintln!("Error loading questions: {err}");
         process::exit(1);
     });
-    if questions.len() == 0 {
-        eprintln!("Expected the number of questions in the question bank to be greater than 0");
+    if questions.is_empty() {
+        eprintln!("Expected the question bank to not be empty");
         process::exit(1);
     }
 
@@ -66,14 +66,13 @@ fn main() {
         if let Event::Key(key_event) = event::read().unwrap_or_else(|err| {
             eprintln!("Error listening for key event: {err}");
             process::exit(1);
-        }) {
-            if key_event.kind == KeyEventKind::Press {
-                // Handle key press event
-                app.handle_event(key_event);
-            }
+        }) && key_event.kind == KeyEventKind::Press
+        {
+            // Handle key press event
+            app.handle_event(key_event);
         }
-
-        let _ = save(&progress_file_path, &app.progress())
-            .unwrap_or_else(|err| eprintln!("Error saving current progress: {err}"));
     }
+
+    save(&progress_file_path, &app.progress())
+        .unwrap_or_else(|err| eprintln!("Error saving current progress: {err}"));
 }

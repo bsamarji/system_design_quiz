@@ -35,7 +35,7 @@ pub struct App {
 ///
 /// If the question id can no longer be found in the question bank then
 /// index position zero is returned by default
-fn get_current_question_index(questions: &Vec<Question>, progress: &QuizProgress) -> usize {
+fn get_current_question_index(questions: &[Question], progress: &QuizProgress) -> usize {
     questions
         .iter()
         .position(|question| question.id == progress.current_question_id)
@@ -46,7 +46,7 @@ impl App {
     /// Constructs the app state for a new user
     pub fn build(questions: Vec<Question>) -> Self {
         Self {
-            questions: questions,
+            questions,
             current_question_index: 0,
             screen: Screen::Question,
             should_quit: false,
@@ -59,8 +59,8 @@ impl App {
         let current_question_index = get_current_question_index(&questions, &progress);
 
         let mut app = Self {
-            questions: questions,
-            current_question_index: current_question_index,
+            questions,
+            current_question_index,
             screen: Screen::Question,
             should_quit: false,
             answers: progress.answers,
@@ -187,8 +187,8 @@ mod tests {
     fn get_current_question_index_from_quiz_progress() {
         let answers = HashMap::from([("scalability_001".to_string(), Choice::A)]);
         let progress = QuizProgress {
+            answers,
             current_question_id: "cap_theorem_001".to_string(),
-            answers: answers,
         };
         let questions = vec![scalability_question(), cap_theorem_question()];
 
@@ -203,7 +203,7 @@ mod tests {
 
         assert_eq!(test_app.questions[0], scalability_question());
         assert_eq!(test_app.screen, Screen::Question);
-        assert_eq!(test_app.should_quit, false);
+        assert!(!test_app.should_quit);
         assert_eq!(test_app.current_question_index, 0);
         assert!(test_app.answers.is_empty());
     }
@@ -212,8 +212,8 @@ mod tests {
     fn build_app_state_from_progress() {
         let answers = HashMap::from([("scalability_001".to_string(), Choice::A)]);
         let progress = QuizProgress {
+            answers,
             current_question_id: "cap_theorem_001".to_string(),
-            answers: answers,
         };
         let questions = vec![scalability_question(), cap_theorem_question()];
 
@@ -224,7 +224,7 @@ mod tests {
             vec![scalability_question(), cap_theorem_question()]
         );
         assert_eq!(test_app.screen, Screen::Question);
-        assert_eq!(test_app.should_quit, false);
+        assert!(!test_app.should_quit);
         assert_eq!(test_app.current_question_index, 1);
         assert!(!test_app.answers.is_empty());
         assert_eq!(test_app.answers["scalability_001"], Choice::A);
@@ -234,8 +234,8 @@ mod tests {
     fn get_progress_from_app_state() {
         let answers = HashMap::from([("scalability_001".to_string(), Choice::A)]);
         let progress = QuizProgress {
+            answers,
             current_question_id: "cap_theorem_001".to_string(),
-            answers: answers,
         };
         let questions = vec![scalability_question(), cap_theorem_question()];
 
@@ -252,7 +252,7 @@ mod tests {
         let mut test_app = App::build(vec![scalability_question()]);
         test_app.quit();
 
-        assert_eq!(test_app.should_quit, true);
+        assert!(test_app.should_quit);
     }
 
     #[test]
@@ -338,8 +338,8 @@ mod tests {
     fn load_progress_whose_current_question_has_answer() {
         let answers = HashMap::from([("scalability_001".to_string(), Choice::A)]);
         let progress = QuizProgress {
+            answers,
             current_question_id: "scalability_001".to_string(),
-            answers: answers,
         };
         let questions = vec![scalability_question(), cap_theorem_question()];
 
@@ -375,7 +375,7 @@ mod tests {
 
         test_app.handle_event(KeyEvent::new(KeyCode::Char('q'), KeyModifiers::NONE));
 
-        assert_eq!(test_app.should_quit, true);
+        assert!(test_app.should_quit);
     }
 
     #[test]
@@ -384,7 +384,7 @@ mod tests {
 
         test_app.handle_event(KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL));
 
-        assert_eq!(test_app.should_quit, true);
+        assert!(test_app.should_quit);
     }
 
     #[test]
@@ -413,7 +413,7 @@ mod tests {
         test_app.handle_event(KeyEvent::new(KeyCode::Char('z'), KeyModifiers::NONE));
 
         assert_eq!(test_app.current_question_index, 0);
-        assert_eq!(test_app.should_quit, false);
+        assert!(!test_app.should_quit);
         assert_eq!(test_app.screen, Screen::Question);
         assert!(test_app.answers.is_empty());
     }
