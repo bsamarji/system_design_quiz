@@ -71,12 +71,12 @@ pub fn render<W: Write>(app: &mut app_state::App, mut stdout: W) -> io::Result<(
             display_question(&app.questions[app.current_question_index], &mut stdout)?;
             let is_correct = evaluate_answer(app);
             display_feedback(is_correct, app, &mut stdout)?;
-            display_feedback_and_summary_navigation(&mut stdout)?;
+            display_feedback_navigation(&mut stdout)?;
         }
         Screen::Summary => {
             let quiz_score = calculate_score(&app.questions, &app.answers);
             display_summary(quiz_score, &mut stdout)?;
-            display_feedback_and_summary_navigation(&mut stdout)?;
+            display_summary_navigation(&mut stdout)?;
         }
     }
 
@@ -173,18 +173,6 @@ fn display_feedback<W: Write>(
     stdout.flush()
 }
 
-/// Prints the actionable keys available to the user on the `Question` screen
-fn display_question_navigation<W: Write>(mut stdout: W) -> io::Result<()> {
-    queue!(
-        stdout,
-        SetAttribute(Attribute::Bold),
-        Print("Press <a> - <d> to answer / <n>ext question / <p>revious question / <q>uit\r\n"),
-        Print("\r\n\r\n"),
-    )?;
-
-    stdout.flush()
-}
-
 /// Prints the quiz summary to stdout
 fn display_summary<W: Write>(score: QuizScore, mut stdout: W) -> io::Result<()> {
     let grade_color = if score.grade == 'A' {
@@ -249,13 +237,37 @@ fn display_summary<W: Write>(score: QuizScore, mut stdout: W) -> io::Result<()> 
     stdout.flush()
 }
 
+/// Prints the actionable keys available to the user on the `Question` screen
+fn display_question_navigation<W: Write>(mut stdout: W) -> io::Result<()> {
+    queue!(
+        stdout,
+        SetAttribute(Attribute::Bold),
+        Print("Press <a> - <d> to answer / <n>ext question / <p>revious question / <q>uit\r\n"),
+        Print("\r\n\r\n"),
+    )?;
+
+    stdout.flush()
+}
+
 /// Prints the actionable keys available to the user on the `Feedback` screen
 /// or the `Summary` screen
-fn display_feedback_and_summary_navigation<W: Write>(mut stdout: W) -> io::Result<()> {
+fn display_feedback_navigation<W: Write>(mut stdout: W) -> io::Result<()> {
     queue!(
         stdout,
         SetAttribute(Attribute::Bold),
         Print("Press <n>ext question / <p>revious question / <q>uit\r\n"),
+        Print("\r\n\r\n"),
+    )?;
+
+    stdout.flush()
+}
+
+/// Prints the actionable keys available to the user on the `Summary` screen
+fn display_summary_navigation<W: Write>(mut stdout: W) -> io::Result<()> {
+    queue!(
+        stdout,
+        SetAttribute(Attribute::Bold),
+        Print("Press <p>revious question / <r>eset quiz / <q>uit\r\n"),
         Print("\r\n\r\n"),
     )?;
 
