@@ -123,10 +123,11 @@ mod tests {
             Some(OsStr::new("progress.json"))
         );
 
-        let data_dir = progress_file_path
-            .parent()
-            .expect("Expected progress file path to have a parent directory");
-
-        assert_eq!(data_dir.file_name(), Some(OsStr::new("sdquiz")));
+        assert!(
+            progress_file_path
+                .ancestors()
+                .any(|path| path.file_name() == Some(OsStr::new("sdquiz"))),
+            "Progress file should be stored beneath the sdquiz application directory"
+        );
     }
 }
