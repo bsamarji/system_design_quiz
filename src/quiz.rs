@@ -3,7 +3,12 @@
 //! The responsibility of the `quiz` crate is to load the questions, evaluate
 //! answers and calculate quiz scores.
 
-use crate::{app_state, models};
+use std::collections::HashMap;
+
+use crate::{
+    app_state,
+    models::{self, Choice, Question},
+};
 
 /// JSON question bank included as a string
 const QUESTION_BANK: &str = include_str!("../data/questions.json");
@@ -23,11 +28,62 @@ pub fn evaluate_answer(app: &mut app_state::App) -> bool {
     }
 }
 
+/// Count the number of answers that are correct in the answers hashmap
+fn correct_answer_count(questions: &[Question], answers: &HashMap<String, Choice>) -> usize {
+    questions
+        .iter()
+        .filter(|question| {
+            answers
+                .get(&question.id)
+                .is_some_and(|answer| *answer == question.correct_answer)
+        })
+        .count()
+}
+
+/// Data structure to hold the final quiz score
+pub struct QuizScore {
+    /// The number of correct answers
+    pub correct: usize,
+    /// The total number of questions
+    pub total: usize,
+    /// The score as a percentage
+    pub percentage: f64,
+    /// The score turned into a grade based on the US grading system
+    pub grade: char,
+}
+
+/// Calculate the final quiz score based on the questions and answers
+pub fn calculate_score(questions: &[Question], answers: &HashMap<String, Choice>) -> QuizScore {
+    let correct = correct_answer_count(questions, answers);
+    let total = questions.len();
+    let percentage = correct as f64 / total as f64 * 100.0;
+    let grade = if percentage >= 90.0 {
+        'A'
+    } else if percentage >= 80.0 {
+        'B'
+    } else if percentage >= 70.0 {
+        'C'
+    } else if percentage >= 60.0 {
+        'D'
+    } else if percentage >= 50.0 {
+        'E'
+    } else {
+        'F'
+    };
+
+    QuizScore {
+        correct,
+        total,
+        percentage,
+        grade,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::app_state::App;
     use crate::models::Choice;
-    use crate::test_helpers::scalability_question;
+    use crate::test_helpers::{cap_theorem_question, scalability_question};
 
     use super::*;
 
@@ -57,5 +113,28 @@ mod tests {
         let mut app = App::build(vec![scalability_question()]);
         app.answers.insert("scalability_001".to_string(), Choice::B);
         assert!(!evaluate_answer(&mut app))
+    }
+
+    #[test]
+    fn one_out_of_two_answers_correct() {
+        let mut app = App::build(vec![scalability_question(), cap_theorem_question()]);
+        app.answers.insert("scalability_001".to_string(), Choice::A); // correct answer is A
+        app.answers.insert("cap_theorem_001".to_string(), Choice::A); // correct answer is C
+        let correct_answer_count = correct_answer_count(&app.questions, &app.answers);
+
+        assert_eq!(correct_answer_count, 1);
+    }
+
+    #[test]
+    fn calculate_grade_a() {
+        let mut app = App::build(vec![scalability_question(), cap_theorem_question()]);
+        app.answers.insert("scalability_001".to_string(), Choice::A); // correct answer is A
+        app.answers.insert("cap_theorem_001".to_string(), Choice::C); // correct answer is C
+        let score = calculate_score(&app.questions, &app.answers);
+
+        assert_eq!(score.correct, 2);
+        assert_eq!(score.total, 2);
+        assert_eq!(score.percentage, 100.0);
+        assert_eq!(score.grade, 'A');
     }
 }

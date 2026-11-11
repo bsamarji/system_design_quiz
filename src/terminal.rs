@@ -8,7 +8,7 @@ use std::io::{self, Write};
 use crate::{
     app_state::{self, Screen},
     models::{self, Choice},
-    quiz::evaluate_answer,
+    quiz::{QuizScore, calculate_score, evaluate_answer},
 };
 use crossterm::{
     cursor::MoveTo,
@@ -74,7 +74,9 @@ pub fn render<W: Write>(app: &mut app_state::App, mut stdout: W) -> io::Result<(
             display_feedback_navigation(&mut stdout)?;
         }
         Screen::Summary => {
-            todo!()
+            let quiz_score = calculate_score(&app.questions, &app.answers);
+            display_summary(quiz_score, &mut stdout)?;
+            display_summary_navigation(&mut stdout)?;
         }
     }
 
@@ -171,6 +173,62 @@ fn display_feedback<W: Write>(
     stdout.flush()
 }
 
+/// Prints the quiz summary to stdout
+fn display_summary<W: Write>(score: QuizScore, mut stdout: W) -> io::Result<()> {
+    let grade_color = if score.grade == 'A' {
+        Color::DarkGreen
+    } else if score.grade == 'B' {
+        Color::Green
+    } else if score.grade == 'C' {
+        Color::Yellow
+    } else if score.grade == 'D' {
+        Color::DarkYellow
+    } else if score.grade == 'E' {
+        Color::Red
+    } else {
+        Color::DarkRed
+    };
+
+    queue!(stdout, Clear(ClearType::All), MoveTo(0, 0),)?;
+
+    queue!(
+        stdout,
+        SetAttribute(Attribute::Bold),
+        SetAttribute(Attribute::Underlined),
+        Print("Summary"),
+        SetAttribute(Attribute::Reset),
+        Print("\r\n\r\n"),
+    )?;
+
+    queue!(
+        stdout,
+        SetAttribute(Attribute::Bold),
+        Print(format!("  Total score: {}/{}", score.correct, score.total)),
+        SetAttribute(Attribute::Reset),
+        Print("\r\n\r\n"),
+    )?;
+
+    queue!(
+        stdout,
+        SetAttribute(Attribute::Bold),
+        Print(format!("  Percentage: {}%", score.percentage)),
+        SetAttribute(Attribute::Reset),
+        Print("\r\n\r\n"),
+    )?;
+
+    queue!(
+        stdout,
+        SetAttribute(Attribute::Bold),
+        Print("  Grade: "),
+        SetForegroundColor(grade_color),
+        Print(score.grade),
+        SetAttribute(Attribute::Reset),
+        Print("\r\n\r\n"),
+    )?;
+
+    stdout.flush()
+}
+
 /// Prints the actionable keys available to the user on the `Question` screen
 fn display_question_navigation<W: Write>(mut stdout: W) -> io::Result<()> {
     queue!(
@@ -184,11 +242,24 @@ fn display_question_navigation<W: Write>(mut stdout: W) -> io::Result<()> {
 }
 
 /// Prints the actionable keys available to the user on the `Feedback` screen
+/// or the `Summary` screen
 fn display_feedback_navigation<W: Write>(mut stdout: W) -> io::Result<()> {
     queue!(
         stdout,
         SetAttribute(Attribute::Bold),
         Print("Press <n>ext question / <p>revious question / <q>uit\r\n"),
+        Print("\r\n\r\n"),
+    )?;
+
+    stdout.flush()
+}
+
+/// Prints the actionable keys available to the user on the `Summary` screen
+fn display_summary_navigation<W: Write>(mut stdout: W) -> io::Result<()> {
+    queue!(
+        stdout,
+        SetAttribute(Attribute::Bold),
+        Print("Press <p>revious question / <r>eset quiz / <q>uit\r\n"),
         Print("\r\n\r\n"),
     )?;
 
