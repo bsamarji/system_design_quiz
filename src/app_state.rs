@@ -148,6 +148,14 @@ impl App {
         };
     }
 
+    /// Clear the select answers, reset the question index to zero and set the
+    /// screen to `Question`
+    fn reset_quiz(&mut self) {
+        self.answers = HashMap::new();
+        self.current_question_index = 0;
+        self.screen = Screen::Question;
+    }
+
     /// Handles key press events to dictate the next action the application
     /// takes
     pub fn handle_event(&mut self, key_event: KeyEvent) {
@@ -187,6 +195,11 @@ impl App {
                     } else {
                         self.decrement_question_index();
                         self.update_screen_for_current_question();
+                    }
+                }
+                KeyCode::Char('r') => {
+                    if self.screen == Screen::Summary {
+                        self.reset_quiz();
                     }
                 }
                 _ => {}
